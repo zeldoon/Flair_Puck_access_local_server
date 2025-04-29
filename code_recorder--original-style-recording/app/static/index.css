@@ -1,0 +1,12 @@
+body {
+
+}
+
+.custom-style > .custom-container-width {
+  width: 85%;
+  margin: auto;
+}
+
+label {
+  display: inline-grid;
+}

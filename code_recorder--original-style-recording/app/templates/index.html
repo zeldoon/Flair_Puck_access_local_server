@@ -1,0 +1,49 @@
+<!-- index.html-->
+
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block body %}
+<div class="jumbotron">
+  <h2>Flair IR Recorder</h2>
+  <p class="lead">All the codez will belong to us</p>
+</div>
+<div id="ir-code-holder">
+  <div class="fixed-table-toolbar"><div class="bs-bars pull-right">
+      <div id="toolbar">
+          <button id="remove-codes" class="btn btn-danger">
+              <i class="glyphicon glyphicon-remove"></i> Delete
+          </button>
+          <button id="save-metadata" class="btn btn-info">
+              <i class="glyphicon glyphicon-floppy-disk"></i> Save
+          </button>
+      </div>
+  </div>
+  <table data-toggle="table" class="display table table-bordered" data-url="/ir_codes" id="ir_code_table">
+      <thead>
+          <tr>
+              <th data-field="uuid" class="bs-checkbox" data-formatter="checkBoxFormatter"><input id="checkbox-all" type="checkbox"></th>
+              <th data-field="meta_data" data-formatter="metaDataForm">Metadata</th>
+              <th data-field="recorded_at" data-formatter="timeStampFormatter">Recorded At</th>
+              <th data-field="command_data">Command Data (buggy)</th>
+              <th data-field="binary_packed_data">Binary Packed Data</th>
+              <th data-field="raw_command">Raw Command</th>
+              <th data-field="transcoded_command">Transcoded Command</th>
+          </tr>
+      </thead>
+  </table>
+
+
+</div>
+<script src="{{url_for('static', filename='bower_components/jquery/dist/jquery.min.js')}}"></script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.css">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
+
+<!-- Latest compiled and minified Locales -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/locale/bootstrap-table-zh-CN.min.js"></script>
+
+<script src="{{url_for('static', filename='index.js')}}"></script>
+{% endblock %}

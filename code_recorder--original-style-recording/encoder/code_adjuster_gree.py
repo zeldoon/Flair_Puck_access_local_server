@@ -1,0 +1,61 @@
+# NOTE
+# Use python code_adjuster.py [input file name] where the
+# input file name is the txt file you want to adjust the
+# IR codes and this will create an output file named
+# [filename]-adjusted.txt in the same directory
+
+import sys
+import json
+from collections import Counter
+from pprint import pprint
+from struct import *
+
+def calc_checksum(code_data):
+    checksum_sum = 0
+    for i in range(0, 8):
+        if i == 4:
+            continue
+        code_byte = code_data[i*8:i*8+8]
+        code_byte = code_byte[::-1]
+        checksum_sum += int(code_byte, 2) & 0x0F
+    checksum_sum += 0x0A
+    checksum_sum = checksum_sum & 0x0F
+    calculated_checksum = format(checksum_sum, '04b')
+    calculated_checksum = calculated_checksum[::-1]
+    return calculated_checksum
+
+def adjust_codes(file_to_adjust):
+    print('START...')
+    original_file = open(file_to_adjust, 'r')
+    print('File to adjust: ', original_file.name)
+    json_data = open(file_to_adjust).read()
+
+    data = json.loads(json_data)
+    
+    codes = data['Codes']
+    for idx, code in enumerate(codes):
+        if idx > 1:
+            old_beef = str(code['Data'])
+            print('-----------------------------')
+            print(code['Mode'])
+            print(old_beef)
+            new_beef = old_beef[0:86] + '0' + old_beef[87:]
+            print(new_beef)
+            code['Data'] = new_beef
+
+    output_name = str(original_file.name) + '-adjusted.txt'
+    with open(output_name, 'w') as outfile:
+        json.dump(data, outfile)
+    print('DONE.')
+
+
+# MAIN PROGRAM
+
+print('===================================')
+print('THE ADJUSTER')
+print('===================================')
+codes_to_adjust = sys.argv[1]
+adjust_codes(codes_to_adjust)
+
+
+
