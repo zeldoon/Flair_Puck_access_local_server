@@ -1,0 +1,2 @@
+feature/tests/test_flair_devices_puck.py
+feature/tests/test_thermostat_settings.py

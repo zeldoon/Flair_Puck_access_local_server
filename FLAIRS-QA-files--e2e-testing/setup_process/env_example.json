@@ -1,0 +1,88 @@
+{
+    "url": {
+        "site": "https://my-qa.flair.co",
+        "api": "https://api-qa.flair.co",
+        "new": {
+            "home": "https://my-qa.flair.co/h/new/"
+        }
+    },
+    "auth": {
+        "username": "__FLAIR_USERNAME",
+        "password": "__FLAIR_PASSWORD"
+    },
+    "demo": {
+        "home": {
+            "name": "pw_test_home"
+        },
+        "integrations": [
+            {
+                "manual_id": "3723a96f-108e-48dc-95b1-d37b6e87012d",
+                "structures": [
+                    {
+                        "id": "8306753f-5db4-44a4-9a4c-f9a3b513e347",
+                        "name": "Living Room",
+                        "enabled": true
+                    }
+                ],
+                "hvac_devices": [
+                    {
+                        "type": "Ecobee",
+                        "room_id": 0,
+                        "id": "b3c2f77e-fa80-4a44-80fa-6302f83de68c",
+                        "name": "Living Room",
+                        "vent_count": 5,
+                        "tstat_portal_login": {
+                            "username": "__ECOBEE_USERNAME",
+                            "password": "__ECOBEE_PASSWORD"
+                        }
+                    }
+                ]
+            }
+        ],
+        "unsupported": [
+            {
+                "structures": [],
+                "hvac_devices": [
+                    {
+                        "type": "unsupported",
+                        "id": 0,
+                        "room_id": 0,
+                        "name": "pw_unsupported",
+                        "func": "forced_air",
+                        "brand": "Emerson",
+                        "vent_count": 3
+                    }
+                ]
+            }
+        ],
+        "ir_device": [
+            {
+                "structures": [],
+                "hvac_devices": [
+                    {
+                        "type": "ir",
+                        "ir_device_type": "Mini Split",
+                        "lock_modes": false,
+                        "id": 0,
+                        "room_id": 0,
+                        "name": "pw_minisplit",
+                        "func": "both",
+                        "brand": "LASKO",
+                        "remote": "5397",
+                        "model": "Model 1"
+                    }
+                ]
+            }
+        ],
+        "rooms": [
+            {
+                "id": 0,
+                "name": "pw_test_room"
+            },
+            {
+                "id": 1,
+                "name": "second_pw_test_room"
+            }
+        ]
+    }
+}

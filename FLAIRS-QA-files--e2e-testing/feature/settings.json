@@ -1,0 +1,23 @@
+{
+    "browser_context_settings": {
+        "geolocation": {
+            "latitude": 45.5220663,
+            "longitude": -122.6560322
+        },
+        "permissions": [
+            "geolocation"
+        ],
+        "record_har_path": "feature/network/hars.zip",
+        "record_har_url_filter": "**/api*/**"
+    },
+    "browser_type_settings": {
+        "timeout": 15000,
+        "devtools": false,
+        "headless": true
+    },
+    "other_settings": {
+        "device": "Galaxy S9+",
+        "timeout": 15000,
+        "browser": "chromium"
+    }
+}

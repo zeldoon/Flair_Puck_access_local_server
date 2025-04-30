@@ -1,0 +1,55 @@
+pipeline {
+    agent {
+        docker {
+            label 'testing'
+            image 'mcr.microsoft.com/playwright:v1.32.1-jammy'
+            args "-u root"
+        }
+    }
+    stages {
+        stage('Get Pip') {
+            when {
+                not {
+                    expression {
+                        fileExists 'get-pip.py'
+                    }
+                }
+            }
+            steps {
+                sh 'wget https://bootstrap.pypa.io/get-pip.py'
+            }
+        }
+        stage('Setup-Process Tests') {
+            environment {
+                FLAIR = credentials('FLAIR')
+                ECOBEE = credentials('ECOBEE')
+            }
+            steps {
+                checkout scm
+                sh 'python3 get-pip.py'
+                sh 'python3 -m pip install -U pip'
+                sh 'python3 -m pip install --user pipenv==2023.6.26'
+                sh './envmod.sh'
+                sh 'PATH=$PATH:/root/.local/bin pipenv install'
+                sh 'PATH=$PATH:/root/.local/bin pipenv run playwright install chromium'
+                sh 'PATH=$PATH:/root/.local/bin pipenv run pytest setup_process/tests/test*.py -vs --junitxml=setup_process/results/results.xml'
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'setup_process/traces/**, setup_process/network/**'
+                    junit testResults: 'setup_process/results/results.xml', skipPublishingChecks: true
+                }
+                success {
+                    slackSend channel: '#jenkins-qa-notif', color: '#009919', \
+                        message: "🎉 E2E setup process test succeeded: (<${env.BUILD_URL}|View build>)", \
+                        tokenCredentialId: 'slack-bot-token'
+                }
+                unsuccessful {
+                    slackSend channel: '#jenkins-qa-notif', color: '#CC0022', \
+                        message: "💥 @engineering E2E setup process test failed: (<${env.BUILD_URL}|View build>)", \
+                        tokenCredentialId: 'slack-bot-token'
+                }
+            }
+        }
+    }
+}

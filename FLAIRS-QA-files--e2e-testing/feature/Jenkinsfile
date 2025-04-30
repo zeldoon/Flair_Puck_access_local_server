@@ -1,0 +1,130 @@
+pipeline {
+    environment {
+        FTHOST = credentials('ft-rdshost')
+        PG = credentials('ft-postgres')
+    }
+    agent {
+        label 'testing'
+    }
+    stages {
+        stage('Test Session') {
+            agent {
+                dockerfile {
+                    label 'testing'
+                    dir 'dockerfiles/playwright'
+                    args """
+                        -e PATH=\$PATH:/root/.local/bin
+                        -e PGUSER=${PG_USR}
+                        -e PGPASSWORD=${PG_PSW}
+                        -e PGHOST=${FTHOST}
+                        -e PGPORT=5432
+                        -e PGDATABASE=flair_ft
+                        -p 5432:5432
+                        -v /home/jenkins/.ssh:/home/root/.ssh
+                        -u root
+                    """
+                }
+            }
+            stages {
+                stage('Playwright Setup') {
+                    steps {
+                        checkout scm
+                        sh './db_reset.sh'
+                        sh 'sleep 10; ./confirm_app_ready.sh'
+                        sh "./set_pr_location.sh"
+                        sh 'pipenv install; pipenv run playwright install chromium'
+                        sh 'perl -pi -e \'s/"headless":\\s+false/"headless": true/g\' feature/settings.json'
+                        sh 'pipenv run pytest delayed_tests/tests/test_start*.py'
+                        sh 'rm -rf .pytest_cache'
+                        sh 'rm -rf feature/results/*'
+                        sh 'rm suite-*-* || :'
+                        script {
+                            env.FAST_REPORT_START_TIME = readFile 'start_time'
+                        }
+                        sh 'pipenv run python feature/split_tests.py'
+                        sh 'cat feature/split*.txt'
+                    }
+                }
+                stage('Test Execution') {
+                    matrix {
+                        axes {
+                            axis {
+                                name 'TEST_LIST'
+                                // REPLACE FOLLOWING
+                                values 'feature/split_0_unfinished_homes_0.txt', 'feature/split_1_flair_devices_puck_and_thermostat_settings_1.txt', 'feature/split_2_user_2.txt', 'feature/split_3_layout_normal_user_3.txt', 'feature/split_4_flair_devices_general_4.txt', 'feature/split_5_fast_report_5.txt', 'feature/split_6_room_tile_6.txt', 'feature/split_7_admin_user_7.txt'
+                            }
+                        }
+                        stages {
+                            stage('Individual Suite Set') {
+                                steps {
+                                    script {
+                                        try {
+                                            sh """
+                                                if [ -s ${TEST_LIST} ]; then
+                                                    mkdir -p feature/results/${TEST_LIST[-5]}
+                                                    pipenv run pytest \$(cat ${TEST_LIST} | xargs) -vs --junitxml=feature/results/${TEST_LIST[-5]}/results.xml 2>&1 | tee suite-${TEST_LIST[-5]}-output || :
+                                                else
+                                                    echo no test files in ${TEST_LIST}
+                                                fi
+                                            """
+                                        } catch (e) { 
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        post {
+                            always {
+                                archiveArtifacts artifacts: "feature/results/${TEST_LIST[-5]}/results*.xml"
+                                junit testResults: "feature/results/${TEST_LIST[-5]}/results*.xml", skipPublishingChecks: true, skipMarkingBuildUnstable: true
+                            }
+                        }
+                    }
+                }
+                stage('Retries') {
+                    steps {
+                        archiveArtifacts artifacts: "feature/traces/**/*.zip"
+                        sh 'cat suite-*-output | grep " FAILED" | awk \'{print \$1}\' | xargs > suite-retries-list'
+                        sh '''
+                            if [ -s suite-retries-list ]; then
+                                ./db_reset.sh
+                                sleep 10; ./confirm_app_ready.sh
+                                pipenv run pytest \$(cat suite-retries-list) -vs --junitxml=feature/results/retries/results.xml || :
+                            fi
+                        '''
+                    }
+                    post {
+                        always {
+                            archiveArtifacts artifacts: "feature/split*.txt, feature/traces/**/*.zip, feature/results/retries"
+                            junit testResults: "feature/results/retries/results*.xml", skipPublishingChecks: true
+                        }
+                        success {
+                            slackSend channel: '#jenkins-qa-notif', color: '#009919', \
+                                message: "🎉 All Feature Tests succeeded: (<${env.BUILD_URL}|View build>)", \
+                                tokenCredentialId: 'slack-bot-token'
+                        }
+                        unsuccessful {
+                            slackSend channel: '#jenkins-qa-notif', color: '#CC0022', \
+                                message: "💥 At least one Feature Test failed: (<${env.BUILD_URL}|View build>)", \
+                                tokenCredentialId: 'slack-bot-token'
+                        }
+                    }
+                }
+                stage('Auxiliary Test Followups') {
+                    steps {
+                        sh 'for script in delayed_tests/scripts/*; do pipenv run python $script; done'
+                    }
+                    post {
+                        failure {
+                            slackSend channel: '#jenkins-qa-notif', color: '#CC0022', \
+                                message: "🚨🚨🚨 @/engineering Time-Delayed UI Test Failed", \
+                                tokenCredentialId: 'slack-bot-token'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
